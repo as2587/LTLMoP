@@ -4,6 +4,7 @@
 naoSensors.py - Sensor handler for the Aldebaran Nao
 ====================================================
 """
+import logging
 
 class naoSensorHandler:
     def __init__(self, proj, shared_data):
@@ -18,9 +19,53 @@ class naoSensorHandler:
         self.sttProxy = None
         self.ldmProxy = None
 
+        self.landMarkInitialized = False
+        self.detectedVals = {}
+
+        #for example:
+        self.detectedVals[0] = [68, 130] #detectedVals[0] corresponds to values detected by Detector_0, Landmarks
+
     ###################################
     ### Available sensor functions: ###
     ###################################
+    def _initLandMark(self):
+        if not self.landMarkInitialized:
+        # initialize landmark detection
+            if self.ldmProxy == None:
+                self.ldmProxy = self.naoInitHandler.createProxy('ALLandMarkDetection')
+            if self.memProxy is None:
+                self.memProxy = self.naoInitHandler.createProxy('ALMemory')
+
+        ### Initialize land Mark tracking
+            subs = [x[0] for x in self.ldmProxy.getSubscribersInfo()]
+
+        # Close any previous subscriptions that might have been hanging open
+            if "ltlmop_sensorhandler" in subs:
+                self.ldmProxy.unsubscribe("ltlmop_sensorhandler")
+            self.ldmProxy.subscribe("ltlmop_sensorhandler", 100, 0.0)
+            self.landMarkInitialized=True
+
+    def _getLandMarkNum(self):
+        foundMarks=[]
+        val = self.memProxy.getData("LandmarkDetected",0)
+        if(val and isinstance(val, list) and len(val)>=2):
+            markInfoArray = val[1]
+            try:
+                #msg = "Number of Markers found: " + str(len(markInfoArray))
+                #msg = "length of foundMarks: "
+                for markInfo in markInfoArray:
+                    markExtraInfo = markInfo[1] #Number of each tag found
+                    foundMarks.append(markExtraInfo[0])
+                    #msg += "-- " + str(len(foundMarks))
+
+                #logging.info(msg)
+                return foundMarks
+            except Exception, e:
+                print "Naomarks detected, but it seems getData is invalid. ALValue ="
+                print val
+                print "Error msg %s" % (str(e))
+
+
     def seeLandMark(self,landMark_id,initial=False):
         """
         Use Nao's landmark recognition system to detect radial bar code landmark.
@@ -29,51 +74,40 @@ class naoSensorHandler:
         landMark_id (int): The id number of bar code to detect
         """
         if initial:
-
-            # initialize landmark detection
-            if self.ldmProxy == None:
-                self.ldmProxy = self.naoInitHandler.createProxy('ALLandMarkDetection')
-            if self.memProxy is None:
-                self.memProxy = self.naoInitHandler.createProxy('ALMemory')
-
-            ### Initialize land Mark tracking
-            subs = [x[0] for x in self.ldmProxy.getSubscribersInfo()]
-            # Close any previous subscriptions that might have been hanging open
-            if "ltlmop_sensorhandler" in subs:
-                self.ldmProxy.unsubscribe("ltlmop_sensorhandler")
-            self.ldmProxy.subscribe("ltlmop_sensorhandler", 100, 0.0)
+            self._initLandMark()
             return True
         else:
-            val = self.memProxy.getData("LandmarkDetected",0)
-
-            if(val and isinstance(val, list) and len(val) == 5):
-                # We detected naomarks !
-                # For each mark, we can read its shape info and ID.
-
-                # Second Field = array of Mark_Info's.
-                markInfoArray = val[1]
-
-                try:
-                    # Browse the markInfoArray to get info on each detected mark.
-                    for markInfo in markInfoArray:
-
-                        # First Field = Shape info.
-                        markShapeInfo = markInfo[0]
-
-                        # Second Field = Extra info (ie, mark ID).
-                        markExtraInfo = markInfo[1]
-
-                        #print " width %.3f - height %.3f" % (markShapeInfo[3], markShapeInfo[4])
-
-                        #if float(markShapeInfo[3])>0.05 and float(markShapeInfo[4])>0.05:
-                        if landMark_id in markExtraInfo:
-                            return True
-
-                except Exception, e:
-                    print "Naomarks detected, but it seems getData is invalid. ALValue ="
-                    print val
-                    print "Error msg %s" % (str(e))
+            allFound = self._getLandMarkNum()
+            if (isinstance(allFound, list) and len(allFound)>0):
+                if (landMark_id in allFound):
+                    return True
             return False
+
+    def DetectLandmark(self, detectNum, initial=False):
+        """
+        Detector Function for Open-world specifications
+
+        detectNum (int): A unique number to define the detector
+        methodname (string): name of method to call
+        """
+        if initial:
+            self._initLandMark()
+        else:
+            allFound = self._getLandMarkNum()
+            if(isinstance(allFound, list) and len(allFound)>0):
+                logging.info("DetectLandmark: " + str(len(allFound)))
+                for elem in allFound:
+                    if not (elem in self.detectedVals[detectNum]):
+                        logging.info("Found an un-identified tag: " + str(elem))
+                        #Add_to list...
+                        #return True
+                    else:
+                        logging.info("Got one for " + str(elem))
+            #         return True
+        logging.info("----------")
+        return False
+
+
 
 
     def hearWord(self, word, threshold, initial=False):

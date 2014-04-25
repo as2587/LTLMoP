@@ -36,7 +36,6 @@ from asyncProcesses import AsynchronousProcessThread
 
 from copy import deepcopy
 
-import logging
 import globalConfig
 
 
@@ -1055,17 +1054,21 @@ class SpecEditorFrame(wx.Frame):
         self.appendLog("Decomposing map into convex regions...\n", "BLUE")
 
         compiler._decompose()
-        self.proj = compiler.proj
-        self.decomposedRFI = compiler.parser.proj.rfi
 
+        self.decomposedRFI = compiler.parser.proj.rfi
+        
+        self.appendLog("Creating LTL...\n", "BLUE")
+
+        spec, self.tracebackTree, self.response = compiler._writeLTLFile()
+        
+        self.proj = compiler.proj
+        self.proj.all_customs = self.proj.all_customs + self.proj.internal_props
+        self.proj.writeSpecFile()
+        
         # Update workspace decomposition listbox
         if self.proj.regionMapping is not None:
             self.list_box_locphrases.Set(self.proj.regionMapping.keys())
             self.list_box_locphrases.Select(0)
-
-        self.appendLog("Creating LTL...\n", "BLUE")
-
-        spec, self.tracebackTree, self.response = compiler._writeLTLFile()
         
         # Add any auto-generated propositions to the list
         # TODO: what about removing old ones?

@@ -37,18 +37,25 @@ def writeTxtFile():
     file = open("HomographyCalib.txt", "w")
     file.write(printAllPoints())
     file.close
-           
+
+def resizedFrame(frameIn):
+    r = 700.0/frameIn.shape[1]
+    dim = (700,int(frameIn.shape[0]*r))
+    frameOut = cv2.resize(frameIn, dim, interpolation = cv2.INTER_AREA)
+    return frameOut 
+    
 def mainloop():
     win =cv2.namedWindow("Video Stream")
     cap = cv2.VideoCapture(0)
     ret, frame = cap.read()
-    cap.set(3, 720)
-    cap.set(4, 480)
+    # cap.set(3, 600)
+    # cap.set(4, 500)
     cv2.setMouseCallback("Video Stream", mouseClicked)
     
         
     while(len(allImagePt)<4):
         if frame is not None:
+            frame = resizedFrame(frame)
             for point in allImagePt:
                 cv2.circle(frame,point, 5, (0,0,255),thickness=-1)
             # Our operations on the frame come here            

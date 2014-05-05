@@ -132,12 +132,18 @@ class TrackerApp:
     def __init__(self):
         print "Tracker initalized"
         self.cap = _video.cv2.VideoCapture(0)
-        self.cap.set(3,400)
-        self.cap.set(4,300)
         self.frame = None
         self.paused = False
         self.tracker = PlaneTracker()
         ret, self.frame = self.cap.read()
+        
+        old_w = self.cap.get(3)#w
+        old_h = self.cap.get(4)#h
+        
+        new_w = 700.0
+        new_h=int(new_w*(old_h/old_w))
+        self.cap.set(3, new_w)
+        self.cap.set(4, new_h)
         
         cv2.namedWindow('plane')
         self.rect_sel = _common.RectSelector('plane', self.on_rect)
@@ -150,7 +156,13 @@ class TrackerApp:
         r_pts.append(((int(homRect[0][0]+homRect[1][0])/2), int((homRect[0][1]+homRect[1][1])/2)))
         r_pts.append(((int(homRect[2][0]+homRect[3][0])/2), int((homRect[2][1]+homRect[3][1])/2)))
         return r_pts
-
+        
+    def resizedFrame(self,frameIn):
+        r = 700.0/frameIn.shape[1]
+        dim = (700,int(frameIn.shape[0]*r))
+        frameOut = cv2.resize(frameIn, dim, interpolation = cv2.INTER_AREA)
+        return frameOut
+        
     def run(self):
         iteration_complete = False
         while not iteration_complete:

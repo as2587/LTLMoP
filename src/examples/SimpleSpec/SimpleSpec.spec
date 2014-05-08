@@ -21,7 +21,7 @@ RobotSim
 Customs: # List of custom propositions
 
 RegionFile: # Relative path of region description file
-SimpleSpec.regions
+SimpRegions.regions
 
 Sensors: # List of sensor propositions and their state (enabled = 1, disabled = 0)
 move, 1
@@ -30,8 +30,8 @@ move, 1
 ======== SPECIFICATION ========
 
 RegionMapping: # Mapping between region names and their decomposed counterparts
-r1 = p4
-r2 = p3
+r1 = p3
+r2 = p2
 others = p1
 
 Spec: # Specification in structured English

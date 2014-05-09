@@ -82,7 +82,11 @@ class WebcamPoseHandler(handlerTemplates.PoseHandler):
         theta = math.atan2((r1y-r2y),(r1x-r2x))
         rx_m = (r1x+r2x)/2
         ry_m = (r1y+r2y)/2
-        logging.info("Current Pose: (%d, %d, %d)", rx_m, rx_m, theta)
+        #logging.info("Current Pose: (%d, %d, %.3f)", rx_m, ry_m, theta)
         return np.array([rx_m, ry_m, theta])
 
+if __name__ == '__main__':
+    h = WebcamPoseHandler(None,{})
+    while True:
+        h.getPose()
 

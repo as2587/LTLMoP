@@ -5,6 +5,7 @@
 ======== SETTINGS ========
 
 Actions: # List of action propositions and their state (enabled = 1, disabled = 0)
+actuator1, 1
 
 CompileOptions:
 convexify: True

@@ -31,6 +31,7 @@ from collections import namedtuple
 import _video
 import _common
 
+import logging
 
 FLANN_INDEX_KDTREE = 1
 FLANN_INDEX_LSH    = 6
@@ -66,6 +67,7 @@ class PlaneTracker:
         self.targets = []
 
     def add_target(self, image, rect, data=None):
+        self.clear()
         '''Add a new tracking target.'''
         x0, y0, x1, y1 = rect
         raw_points, raw_descrs = self.detect_features(image)
@@ -172,8 +174,8 @@ class TrackerApp:
                 vis = self.frame.copy()
                 if playing:
                     tracked = self.tracker.track(self.frame)
-                    
-                    for tr in tracked:
+                    if (len(tracked))>0:
+                        tr = tracked[len(tracked)-1]
                         r_pts = self.get_robotPoints(tr.quad)
                         iteration_complete = True
                         for pt in r_pts:
@@ -202,5 +204,7 @@ class TrackerApp:
 
 if __name__ == '__main__':
     print __doc__
-    myTrack = App()
+    myTrack = TrackerApp()
     myTrack.run()
+    while True:
+        myTrack.run()

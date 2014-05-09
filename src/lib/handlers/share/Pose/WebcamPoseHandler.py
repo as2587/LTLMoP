@@ -22,6 +22,9 @@ class WebcamPoseHandler(handlerTemplates.PoseHandler):
         Webcam pose handler - generate robot pose from video stream        
 
         """
+        self.prev_1 = None
+        self.prev_2 = None
+        self.curr = None
         self.findHomography()
         self.trackerApp = TrackerApp()
         try:
@@ -72,7 +75,14 @@ class WebcamPoseHandler(handlerTemplates.PoseHandler):
         y_coord = sol[1, 0]/sol[2,0]
         return x_coord, y_coord
     
-        
+    def compFilter(self,new_x, new_y, new_theta):
+        alpha = 0.6
+        if self.prev_2 == None or self.prev_1 == None:
+            return (new_x, new_y, new_theta)
+        newPred =(2*self.prev_1[0]-self.prev_2[0],2*self.prev_1[1]-self.prev_2[1],2*self.prev_1[2]-self.prev_2[2])
+        newEst = (new_x*alpha+newPred[0]*(1-alpha), new_y*alpha+newPred[1]*(1-alpha), new_theta*alpha+newPred[2]*(1-alpha))
+        newEst = (int(newEst[0]), int(newEst[1]), int(newEst[2]))
+        return newEst
 
     def getPose(self, cached=False):
         robotImgPoints = self.trackerApp.run()
@@ -82,8 +92,12 @@ class WebcamPoseHandler(handlerTemplates.PoseHandler):
         theta = math.atan2((r1y-r2y),(r1x-r2x))
         rx_m = (r1x+r2x)/2
         ry_m = (r1y+r2y)/2
+        
+        self.prev_2 = self.prev_1
+        self.prev_1 = self.curr
+        self.curr = self.compFilter(rx_m, ry_m, theta)
         #logging.info("Current Pose: (%d, %d, %.3f)", rx_m, ry_m, theta)
-        return np.array([rx_m, ry_m, theta])
+        return np.array([self.curr[0], self.curr[1], self.curr[2]])
 
 if __name__ == '__main__':
     h = WebcamPoseHandler(None,{})
